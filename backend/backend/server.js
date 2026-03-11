@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 const fs = require("fs");
 const { createClient } = require("@supabase/supabase-js");
-const feriasExportRoutes = require("./feriasExportRoutes");
+const feriasExportRoutes = require("../src/routes/feriasExportRoutes");
 
 dotenv.config();
 
@@ -37,15 +37,12 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.warn("⚠️ SUPABASE_URL/SUPABASE_SERVICE_KEY não configurados (Render > Environment).");
+  console.warn("⚠️ SUPABASE_URL/SUPABASE_SERVICE_KEY não configurados.");
 }
 
 const supabase = createClient(SUPABASE_URL || "", SUPABASE_SERVICE_KEY || "");
-
-// disponibiliza no app caso outras rotas/serviços precisem acessar
 app.locals.supabase = supabase;
 
-// garante pasta temporária de exportação, se o projeto usar
 const exportDir = process.env.EXPORT_DIR || path.join("/tmp", "exports");
 try {
   if (!fs.existsSync(exportDir)) {
@@ -56,12 +53,10 @@ try {
   console.warn("⚠️ Não foi possível preparar EXPORT_DIR:", String(err));
 }
 
-// raiz útil para teste rápido no navegador
 app.get("/", (req, res) => {
   res.status(200).send("RH CIAPI Backend OK");
 });
 
-// Healthcheck (Render)
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
@@ -70,7 +65,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Exemplo: listar servidores
 app.get("/api/servidores", async (req, res) => {
   try {
     const { data, error } = await supabase.from("servidores").select("*").limit(1000);
@@ -94,10 +88,8 @@ app.get("/api/servidores", async (req, res) => {
   }
 });
 
-// rota de exportação de férias
 app.use("/api/ferias", feriasExportRoutes);
 
-// fallback amigável para rotas não encontradas
 app.use((req, res) => {
   return res.status(404).json({
     ok: false,
@@ -105,7 +97,6 @@ app.use((req, res) => {
   });
 });
 
-// handler final de erro
 app.use((err, req, res, next) => {
   console.error("❌ Erro no backend:", err);
 
